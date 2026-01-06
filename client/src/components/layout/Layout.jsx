@@ -19,7 +19,7 @@ const Layout = ({ children }) => {
                 to="/"
                 className="flex items-center text-xl font-bold text-green-600"
               >
-                🌿 PlantLibrary
+                🌿 Happy Pot
               </Link>
               <Link
                 to="/library"

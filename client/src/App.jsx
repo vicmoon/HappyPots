@@ -2,11 +2,12 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import Home from './pages/Home';
 import PlantLibrary from './pages/PlantLibrary';
-import PlantDetail from './pages/PlantDetail';
+import PlantDetail from './pages/PlantDetails';
 import MyGarden from './pages/MyGarden';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ProtectedRoute from './components/common/ProtectedRoute';
+import './App.css';
 
 function App() {
   return (

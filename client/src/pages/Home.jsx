@@ -4,7 +4,7 @@ const Home = () => {
   return (
     <div className="text-center py-16">
       <h1 className="text-5xl font-bold text-gray-900 mb-4">
-        Welcome to PlantLibrary 🌿
+        Welcome to Happy Pot 🪴
       </h1>
       <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
         Discover, learn, and track your houseplants. Browse thousands of plant
