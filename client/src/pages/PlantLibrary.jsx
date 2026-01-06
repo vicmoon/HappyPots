@@ -2,6 +2,7 @@ import { useState } from 'react';
 import PlantSearch from '../components/plants/PlantSearch';
 import PlantCard from '../components/plants/PlantCard';
 import api from '../services/api';
+import '../styles/PlantLibrary.css';
 
 const PlantLibrary = () => {
   const [plants, setPlants] = useState([]);

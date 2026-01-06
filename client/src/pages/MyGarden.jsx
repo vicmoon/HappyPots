@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
+import '../styles/MyGarden.css';
 
 const MyGarden = () => {
   const [plants, setPlants] = useState([]);
