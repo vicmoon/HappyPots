@@ -26,31 +26,29 @@ const PlantLibrary = () => {
   };
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Plant Library</h1>
+    <div className="plant-library-container">
+      <h1 className="library-title">Plant Library</h1>
 
       <PlantSearch onSearch={handleSearch} isLoading={isLoading} />
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
+      {error && <div className="error-message">{error}</div>}
 
       {plants.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="plants-grid">
           {plants.map((plant) => (
             <PlantCard key={plant.id} plant={plant} />
           ))}
         </div>
       ) : (
-        <div className="text-center py-16 text-gray-500">
+        <div className="empty-state">
           {isLoading ? (
             <p>Searching plants...</p>
           ) : (
             <div>
-              <p className="text-lg mb-2">Search for plants to get started!</p>
-              <p className="text-sm">
+              <p className="empty-state-title">
+                Search for plants to get started!
+              </p>
+              <p className="empty-state-subtitle">
                 Try searching for "Monstera", "Snake Plant", or "Pothos"
               </p>
             </div>

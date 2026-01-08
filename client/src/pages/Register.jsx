@@ -33,92 +33,66 @@ const Register = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto">
-      <h1 className="text-3xl font-bold text-center mb-8">Create Account</h1>
+    <div className="register-container">
+      <h1>Create Account</h1>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
+      {error && <div className="error-message">{error}</div>}
 
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white shadow-md rounded-lg p-8"
-      >
-        <div className="grid grid-cols-2 gap-4 mb-4">
+      <form onSubmit={handleSubmit} className="register-card">
+        <div className="form-group">
           <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              First Name
-            </label>
+            <label>First Name</label>
             <input
               type="text"
               value={formData.first_name}
               onChange={(e) =>
                 setFormData({ ...formData, first_name: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
           </div>
           <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Last Name
-            </label>
+            <label>Last Name</label>
             <input
               type="text"
               value={formData.last_name}
               onChange={(e) =>
                 setFormData({ ...formData, last_name: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
           </div>
         </div>
 
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Email *
-          </label>
+        <div className="form-group">
+          <label>Email *</label>
           <input
             type="email"
             value={formData.email}
             onChange={(e) =>
               setFormData({ ...formData, email: e.target.value })
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             required
           />
         </div>
 
-        <div className="mb-6">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Password *
-          </label>
+        <div className="form-group">
+          <label>Password *</label>
           <input
             type="password"
             value={formData.password}
             onChange={(e) =>
               setFormData({ ...formData, password: e.target.value })
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             required
             minLength={6}
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-400"
-        >
+        <button type="submit" disabled={isLoading} className="register-button">
           {isLoading ? 'Creating Account...' : 'Sign Up'}
         </button>
 
-        <p className="text-center mt-4 text-gray-600">
-          Already have an account?{' '}
-          <Link to="/login" className="text-green-600 hover:text-green-700">
-            Login
-          </Link>
+        <p className="login-link">
+          Already have an account? <Link to="/login">Login</Link>
         </p>
       </form>
     </div>
