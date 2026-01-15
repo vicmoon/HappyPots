@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import PlantSearch from '../components/plants/PlantSearch';
-import PlantCard from '../components/plants/PlantCard';
+import PlantSearch from './PlantSearch';
+import PlantCard from './PlantCard';
 import api from '../services/api';
 import '../styles/PlantLibrary.css';
 
@@ -47,9 +47,6 @@ const PlantLibrary = () => {
             <div>
               <p className="empty-state-title">
                 Search for plants to get started!
-              </p>
-              <p className="empty-state-subtitle">
-                Try searching for "Monstera", "Snake Plant", or "Pothos"
               </p>
             </div>
           )}
