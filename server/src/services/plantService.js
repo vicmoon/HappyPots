@@ -35,34 +35,53 @@ class PlantService {
 
     return plant;
   }
-
   async cacheOrUpdatePlant(plantData) {
-    const [plant, created] = await Plant.upsert(
+    const normalizeArray = (v) => {
+      if (!v) return [];
+      return Array.isArray(v) ? v : [v];
+    };
+
+    const truncate = (str, maxLength = 50) => {
+      if (!str) return null;
+      return str.length > maxLength ? str.substring(0, maxLength) : str;
+    };
+
+    const [plant] = await Plant.upsert(
       {
         perenual_id: plantData.id,
-        common_name: plantData.common_name,
-        scientific_name:
-          plantData.scientific_name && plantData.scientific_name[0],
-        other_names: plantData.other_name || [],
-        family: plantData.family,
-        origin: plantData.origin && plantData.origin[0],
-        type: plantData.type,
-        watering: plantData.watering,
-        sunlight: plantData.sunlight || [],
+        common_name: truncate(plantData.common_name, 100),
+
+        scientific_name: Array.isArray(plantData.scientific_name)
+          ? truncate(plantData.scientific_name[0], 100)
+          : truncate(plantData.scientific_name, 100),
+
+        other_names: normalizeArray(plantData.other_name),
+
+        family: truncate(plantData.family, 50),
+
+        origin: Array.isArray(plantData.origin)
+          ? truncate(plantData.origin[0], 100)
+          : truncate(plantData.origin, 100),
+
+        type: truncate(plantData.type, 50),
+
+        // ⭐ Truncate the "upgrade" message
+        watering: truncate(plantData.watering, 50),
+
+        sunlight: normalizeArray(plantData.sunlight),
+
         image_url:
           plantData.default_image?.original_url ||
           plantData.default_image?.medium_url,
+
         cached_data: plantData,
         last_updated: new Date(),
       },
-      {
-        returning: true,
-      }
+      { returning: true }
     );
 
     return plant;
   }
-
   isOutdated(lastUpdated) {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);

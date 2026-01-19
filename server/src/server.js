@@ -1,6 +1,10 @@
 const app = require('./app');
 const sequelize = require('./config/database');
 const config = require('./config/config');
+const cors = require('cors');
+
+// Enable CORS for all routes
+app.use(cors());
 
 const startServer = async () => {
   try {

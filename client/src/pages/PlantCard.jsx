@@ -13,9 +13,15 @@ const PlantCard = ({ plant }) => {
   return (
     <div className="plant-card">
       <div className="plant-image-container">
-        {default_image?.regular_url ? (
+        {default_image?.regular_url ||
+        default_image?.medium_url ||
+        default_image?.original_url ? (
           <img
-            src={default_image.regular_url}
+            src={
+              default_image.regular_url ||
+              default_image.medium_url ||
+              default_image.original_url
+            }
             alt={common_name}
             className="plant-image"
           />
@@ -44,7 +50,7 @@ const PlantCard = ({ plant }) => {
           {sunlight && sunlight.length > 0 && (
             <div className="plant-detail-item">
               <span className="detail-icon">☀️</span>
-              <span className="detail-text">{sunlight[0]}</span>
+              <span className="detail-text">{sunlight[0] || 'N/A'}</span>
             </div>
           )}
 

@@ -12,11 +12,19 @@ const PlantLibrary = () => {
   const handleSearch = async (query) => {
     setIsLoading(true);
     setError(null);
+
     try {
       const response = await api.get(
         `/plants/search?q=${encodeURIComponent(query)}`
       );
-      setPlants(response.data.data.data || []);
+
+      // Safe extraction
+      const apiData = response.data?.data;
+      const plantList = Array.isArray(apiData?.data) ? apiData.data : [];
+
+      setPlants(plantList);
+
+      console.log('API response:', response.data);
     } catch (err) {
       setError('Failed to search plants. Please try again.');
       console.error(err);
