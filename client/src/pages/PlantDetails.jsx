@@ -6,10 +6,12 @@ import '../styles/PlantDetails.css';
 const PlantDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+
   const [plant, setPlant] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isAddingToGarden, setIsAddingToGarden] = useState(false);
+
   const token = localStorage.getItem('token');
 
   useEffect(() => {
@@ -19,7 +21,37 @@ const PlantDetail = () => {
   const fetchPlantDetails = async () => {
     try {
       const response = await api.get(`/plants/${id}`);
-      setPlant(response.data.data);
+      const raw = response.data.data;
+
+      // ⭐ Normalize the data so the UI always gets clean consistent fields
+      const normalized = {
+        ...raw,
+
+        // scientific_name may be array → convert to string
+        scientific_name: Array.isArray(raw.scientific_name)
+          ? raw.scientific_name.join(', ')
+          : raw.scientific_name,
+
+        // sunlight may be string/null/array
+        sunlight: Array.isArray(raw.sunlight)
+          ? raw.sunlight
+          : raw.sunlight
+          ? [raw.sunlight]
+          : [],
+
+        // origin may be array OR string
+        origin: Array.isArray(raw.origin) ? raw.origin[0] : raw.origin,
+
+        // image_url may be missing → fall back to default_image fields
+        image_url:
+          raw.image_url ||
+          raw.default_image?.regular_url ||
+          raw.default_image?.medium_url ||
+          raw.default_image?.original_url ||
+          null,
+      };
+
+      setPlant(normalized);
     } catch (err) {
       setError('Failed to load plant details');
       console.error(err);
@@ -35,11 +67,13 @@ const PlantDetail = () => {
     }
 
     setIsAddingToGarden(true);
+
     try {
       await api.post('/plants/garden', {
         perenual_id: plant.perenual_id,
         nickname: plant.common_name,
       });
+
       alert('Plant added to your garden!');
       navigate('/my-garden');
     } catch (err) {
@@ -64,6 +98,7 @@ const PlantDetail = () => {
 
   return (
     <div className="max-w-4xl mx-auto">
+      {/* Back Button */}
       <button
         onClick={() => navigate(-1)}
         className="mb-4 text-green-600 hover:text-green-700"
@@ -73,6 +108,7 @@ const PlantDetail = () => {
 
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
         <div className="md:flex">
+          {/* IMAGE SECTION */}
           <div className="md:w-1/2">
             {plant.image_url ? (
               <img
@@ -87,23 +123,30 @@ const PlantDetail = () => {
             )}
           </div>
 
+          {/* DETAILS SECTION */}
           <div className="md:w-1/2 p-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               {plant.common_name}
             </h1>
+
             {plant.scientific_name && (
               <p className="text-xl text-gray-500 italic mb-4">
                 {plant.scientific_name}
               </p>
             )}
 
-            {plant.family && (
-              <p className="text-sm text-gray-600 mb-4">
-                <strong>Family:</strong> {plant.family}
-              </p>
-            )}
-
             <div className="space-y-4 mb-6">
+              {/* Family */}
+              {plant.family && (
+                <div>
+                  <h3 className="font-semibold text-gray-700 mb-1">
+                    🌿 Family
+                  </h3>
+                  <p className="text-gray-600">{plant.family}</p>
+                </div>
+              )}
+
+              {/* Watering */}
               {plant.watering && (
                 <div>
                   <h3 className="font-semibold text-gray-700 mb-1">
@@ -113,7 +156,8 @@ const PlantDetail = () => {
                 </div>
               )}
 
-              {plant.sunlight && plant.sunlight.length > 0 && (
+              {/* Sunlight */}
+              {plant.sunlight.length > 0 && (
                 <div>
                   <h3 className="font-semibold text-gray-700 mb-1">
                     ☀️ Sunlight
@@ -122,6 +166,7 @@ const PlantDetail = () => {
                 </div>
               )}
 
+              {/* Origin */}
               {plant.origin && (
                 <div>
                   <h3 className="font-semibold text-gray-700 mb-1">

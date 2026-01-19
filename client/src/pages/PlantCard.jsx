@@ -1,7 +1,9 @@
 import '../styles/PlantCard.css';
+import { Link } from 'react-router-dom';
 
 const PlantCard = ({ plant }) => {
   const {
+    id,
     common_name,
     scientific_name,
     default_image,
@@ -11,7 +13,7 @@ const PlantCard = ({ plant }) => {
   } = plant;
 
   return (
-    <div className="plant-card">
+    <Link to={`/plants/${id}`} className="plant-card">
       <div className="plant-image-container">
         {default_image?.regular_url ||
         default_image?.medium_url ||
@@ -62,7 +64,7 @@ const PlantCard = ({ plant }) => {
           )}
         </div>
       </div>
-    </div>
+    </Link>
   );
 };
 
