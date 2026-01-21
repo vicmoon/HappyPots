@@ -1,91 +1,81 @@
+const TrefleService = require('./trefleService');
 const Plant = require('../models/Plant');
-const perenualService = require('./perenualService');
 
 class PlantService {
+  // Search plants from Trefle API
   async searchAndCachePlants(query, page = 1) {
-    // First, search external API
-    const perenualData = await perenualService.searchPlants(query, page);
+    try {
+      const plants = await TrefleService.searchPlants(query, page);
 
-    // Cache results in our database
-    if (perenualData.data && perenualData.data.length > 0) {
-      for (const plantData of perenualData.data) {
-        await this.cacheOrUpdatePlant(plantData);
+      // Return normalized data for frontend
+      return plants.map((plant) => ({
+        id: plant.id,
+        common_name: plant.common_name,
+        scientific_name: plant.scientific_name,
+        image_url: plant.image_url,
+        family: plant.family,
+        genus: plant.genus,
+        growth: plant.growth,
+      }));
+    } catch (error) {
+      console.error('Plant search error:', error);
+      throw error;
+    }
+  }
+
+  // Get plant details from Trefle
+  async getPlantDetails(id) {
+    try {
+      const plant = await TrefleService.getPlantDetails(id);
+
+      return {
+        id: plant.id,
+        common_name: plant.common_name,
+        scientific_name: plant.scientific_name,
+        image_url: plant.image_url,
+        family: plant.family,
+        genus: plant.genus,
+        growth: plant.growth,
+      };
+    } catch (error) {
+      console.error('Plant detail error:', error);
+      throw error;
+    }
+  }
+
+  // Get or cache plant in your database
+  async getOrCachePlant(trefleId) {
+    try {
+      // Check if plant already exists in DB
+      let plant = await Plant.findOne({
+        where: { trefle_id: trefleId },
+      });
+
+      if (plant) {
+        return plant;
       }
-    }
 
-    return perenualData;
-  }
+      // Fetch from Trefle and cache
+      const trefleData = await TrefleService.getPlantDetails(trefleId);
 
-  async getPlantById(plantId) {
-    const plant = await Plant.findByPk(plantId);
-    if (!plant) {
-      throw new Error('Plant not found');
-    }
-    return plant;
-  }
-
-  async getPlantByPerenualId(perenualId) {
-    let plant = await Plant.findOne({ where: { perenual_id: perenualId } });
-
-    // If not cached or outdated (older than 30 days), fetch fresh data
-    if (!plant || this.isOutdated(plant.last_updated)) {
-      const perenualData = await perenualService.getPlantDetails(perenualId);
-      plant = await this.cacheOrUpdatePlant(perenualData);
-    }
-
-    return plant;
-  }
-  async cacheOrUpdatePlant(plantData) {
-    const normalizeArray = (v) => {
-      if (!v) return [];
-      return Array.isArray(v) ? v : [v];
-    };
-
-    const truncate = (str, maxLength = 50) => {
-      if (!str) return null;
-      return str.length > maxLength ? str.substring(0, maxLength) : str;
-    };
-
-    const [plant] = await Plant.upsert(
-      {
-        perenual_id: plantData.id,
-        common_name: truncate(plantData.common_name, 100),
-
-        scientific_name: Array.isArray(plantData.scientific_name)
-          ? truncate(plantData.scientific_name[0], 100)
-          : truncate(plantData.scientific_name, 100),
-
-        other_names: normalizeArray(plantData.other_name),
-
-        family: truncate(plantData.family, 50),
-
-        origin: Array.isArray(plantData.origin)
-          ? truncate(plantData.origin[0], 100)
-          : truncate(plantData.origin, 100),
-
-        type: truncate(plantData.type, 50),
-
-        // ⭐ Truncate the "upgrade" message
-        watering: truncate(plantData.watering, 50),
-
-        sunlight: normalizeArray(plantData.sunlight),
-
-        image_url:
-          plantData.default_image?.original_url ||
-          plantData.default_image?.medium_url,
-
-        cached_data: plantData,
+      plant = await Plant.create({
+        trefle_id: trefleData.id,
+        common_name: trefleData.common_name,
+        scientific_name: trefleData.scientific_name,
+        image_url: trefleData.image_url,
+        family: trefleData.family,
+        genus: trefleData.genus,
+        watering: trefleData.growth?.soil_humidity || null,
+        sunlight: trefleData.growth?.light || null,
+        cached_data: trefleData,
         last_updated: new Date(),
-      },
-      { returning: true }
-    );
+      });
 
-    return plant;
-  }
-  isOutdated(lastUpdated) {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    return new Date(lastUpdated) < thirtyDaysAgo;
+      return plant;
+    } catch (error) {
+      console.error('Cache plant error:', error);
+      throw error;
+    }
   }
 }
 

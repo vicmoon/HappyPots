@@ -14,6 +14,7 @@ exports.searchPlants = async (req, res, next) => {
       });
     }
 
+    // ⭐ Trefle returns clean plant data directly
     const results = await plantService.searchAndCachePlants(q, page);
 
     res.status(200).json({
@@ -28,7 +29,9 @@ exports.searchPlants = async (req, res, next) => {
 exports.getPlantDetails = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const plant = await plantService.getPlantByPerenualId(id);
+
+    // ⭐ Changed from getPlantByPerenualId → getPlantDetails (Trefle uses simple IDs)
+    const plant = await plantService.getPlantDetails(id);
 
     res.status(200).json({
       success: true,
@@ -70,17 +73,17 @@ exports.getUserPlants = async (req, res, next) => {
 
 exports.addPlantToGarden = async (req, res, next) => {
   try {
-    const { perenual_id, nickname, location, acquired_date, notes } = req.body;
+    const { trefle_id, nickname, location, acquired_date, notes } = req.body;
 
-    if (!perenual_id) {
+    if (!trefle_id) {
       return res.status(400).json({
         success: false,
         error: 'Plant ID is required',
       });
     }
 
-    // Ensure plant is cached in our database
-    const plant = await plantService.getPlantByPerenualId(perenual_id);
+    // ⭐ Fetch plant from Trefle and cache it
+    const plant = await plantService.getOrCachePlant(trefle_id);
 
     // Add to user's garden
     const userPlant = await UserPlant.create({

@@ -5,6 +5,6 @@ module.exports = {
   nodeEnv: process.env.NODE_ENV || 'development',
   jwtSecret: process.env.JWT_SECRET,
   jwtExpire: process.env.JWT_EXPIRE || '7d',
-  perenualApiKey: process.env.PERENUAL_API_KEY,
-  perenualBaseUrl: process.env.PERENUAL_BASE_URL || 'https://perenual.com/api',
+  trefleApiKey: process.env.TREFLE_TOKEN,
+  trefleBaseUrl: process.env.TREFLE_BASE_URL,
 };

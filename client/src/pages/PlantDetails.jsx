@@ -15,46 +15,82 @@ const PlantDetail = () => {
   const token = localStorage.getItem('token');
 
   useEffect(() => {
+    console.log('🔍 PlantDetail mounted with id:', id);
     fetchPlantDetails();
   }, [id]);
 
   const fetchPlantDetails = async () => {
     try {
+      console.log('📡 Fetching plant details for id:', id);
       const response = await api.get(`/plants/${id}`);
+
+      console.log('✅ API Response:', response.data);
+
       const raw = response.data.data;
 
-      // ⭐ Normalize the data so the UI always gets clean consistent fields
+      if (!raw) {
+        console.error('❌ No data in response');
+        setError('Plant details unavailable.');
+        setIsLoading(false);
+        return;
+      }
+
+      // ⭐ Extract family name safely
+      let familyName = null;
+      if (typeof raw.family === 'string') {
+        familyName = raw.family;
+      } else if (
+        raw.family &&
+        typeof raw.family === 'object' &&
+        raw.family.name
+      ) {
+        familyName = raw.family.name;
+      }
+
+      // ⭐ Extract genus name safely
+      let genusName = null;
+      if (typeof raw.genus === 'string') {
+        genusName = raw.genus;
+      } else if (raw.genus && typeof raw.genus === 'object' && raw.genus.name) {
+        genusName = raw.genus.name;
+      }
+
+      // ⭐ Normalize data - ONLY primitives
       const normalized = {
-        ...raw,
-
-        // scientific_name may be array → convert to string
-        scientific_name: Array.isArray(raw.scientific_name)
-          ? raw.scientific_name.join(', ')
-          : raw.scientific_name,
-
-        // sunlight may be string/null/array
-        sunlight: Array.isArray(raw.sunlight)
-          ? raw.sunlight
-          : raw.sunlight
-          ? [raw.sunlight]
-          : [],
-
-        // origin may be array OR string
-        origin: Array.isArray(raw.origin) ? raw.origin[0] : raw.origin,
-
-        // image_url may be missing → fall back to default_image fields
-        image_url:
-          raw.image_url ||
-          raw.default_image?.regular_url ||
-          raw.default_image?.medium_url ||
-          raw.default_image?.original_url ||
-          null,
+        id: raw.id,
+        common_name: raw.common_name || 'Unknown',
+        scientific_name:
+          typeof raw.scientific_name === 'string'
+            ? raw.scientific_name
+            : 'Unknown',
+        image_url: typeof raw.image_url === 'string' ? raw.image_url : null,
+        family: familyName,
+        genus: genusName,
+        light: typeof raw.growth?.light === 'number' ? raw.growth.light : null,
+        soil_humidity:
+          typeof raw.growth?.soil_humidity === 'number'
+            ? raw.growth.soil_humidity
+            : null,
+        atmospheric_humidity:
+          typeof raw.growth?.atmospheric_humidity === 'number'
+            ? raw.growth.atmospheric_humidity
+            : null,
+        temperature_min:
+          typeof raw.growth?.temperature_min === 'number'
+            ? raw.growth.temperature_min
+            : null,
+        temperature_max:
+          typeof raw.growth?.temperature_max === 'number'
+            ? raw.growth.temperature_max
+            : null,
       };
+
+      console.log('✅ Normalized plant:', normalized);
 
       setPlant(normalized);
     } catch (err) {
+      console.error('❌ Error fetching plant details:', err);
       setError('Failed to load plant details');
-      console.error(err);
     } finally {
       setIsLoading(false);
     }
@@ -70,7 +106,7 @@ const PlantDetail = () => {
 
     try {
       await api.post('/plants/garden', {
-        perenual_id: plant.perenual_id,
+        trefle_id: plant.id,
         nickname: plant.common_name,
       });
 
@@ -82,6 +118,27 @@ const PlantDetail = () => {
     } finally {
       setIsAddingToGarden(false);
     }
+  };
+
+  const getLightLabel = (level) => {
+    const labels = {
+      0: 'Full Shade',
+      1: 'Partial Shade',
+      2: 'Partial Sun',
+      3: 'Full Sun',
+    };
+    return labels[level] || 'Unknown';
+  };
+
+  const getHumidityLabel = (level) => {
+    const labels = {
+      1: 'Low',
+      2: 'Medium',
+      3: 'High',
+      4: 'Very High',
+      5: 'Extremely High',
+    };
+    return labels[level] || 'Unknown';
   };
 
   if (isLoading) {
@@ -98,7 +155,6 @@ const PlantDetail = () => {
 
   return (
     <div className="max-w-4xl mx-auto">
-      {/* Back Button */}
       <button
         onClick={() => navigate(-1)}
         className="mb-4 text-green-600 hover:text-green-700"
@@ -110,11 +166,14 @@ const PlantDetail = () => {
         <div className="md:flex">
           {/* IMAGE SECTION */}
           <div className="md:w-1/2">
-            {plant.image_url ? (
+            {plant.image_url && typeof plant.image_url === 'string' ? (
               <img
                 src={plant.image_url}
                 alt={plant.common_name}
                 className="w-full h-96 object-cover"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
               />
             ) : (
               <div className="w-full h-96 bg-gray-200 flex items-center justify-center">
@@ -126,55 +185,79 @@ const PlantDetail = () => {
           {/* DETAILS SECTION */}
           <div className="md:w-1/2 p-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {plant.common_name}
+              {String(plant.common_name)}
             </h1>
 
-            {plant.scientific_name && (
-              <p className="text-xl text-gray-500 italic mb-4">
-                {plant.scientific_name}
-              </p>
-            )}
+            {plant.scientific_name &&
+              typeof plant.scientific_name === 'string' && (
+                <p className="text-xl text-gray-500 italic mb-4">
+                  {String(plant.scientific_name)}
+                </p>
+              )}
 
             <div className="space-y-4 mb-6">
               {/* Family */}
-              {plant.family && (
+              {plant.family && typeof plant.family === 'string' && (
                 <div>
                   <h3 className="font-semibold text-gray-700 mb-1">
                     🌿 Family
                   </h3>
-                  <p className="text-gray-600">{plant.family}</p>
+                  <p className="text-gray-600">{String(plant.family)}</p>
                 </div>
               )}
 
-              {/* Watering */}
-              {plant.watering && (
+              {/* Genus */}
+              {plant.genus && typeof plant.genus === 'string' && (
                 <div>
-                  <h3 className="font-semibold text-gray-700 mb-1">
-                    💧 Watering
-                  </h3>
-                  <p className="text-gray-600 capitalize">{plant.watering}</p>
+                  <h3 className="font-semibold text-gray-700 mb-1">🔬 Genus</h3>
+                  <p className="text-gray-600">{String(plant.genus)}</p>
                 </div>
               )}
 
-              {/* Sunlight */}
-              {plant.sunlight.length > 0 && (
+              {/* Light Requirements */}
+              {typeof plant.light === 'number' && (
                 <div>
-                  <h3 className="font-semibold text-gray-700 mb-1">
-                    ☀️ Sunlight
-                  </h3>
-                  <p className="text-gray-600">{plant.sunlight.join(', ')}</p>
+                  <h3 className="font-semibold text-gray-700 mb-1">☀️ Light</h3>
+                  <p className="text-gray-600">{getLightLabel(plant.light)}</p>
                 </div>
               )}
 
-              {/* Origin */}
-              {plant.origin && (
+              {/* Soil Humidity */}
+              {typeof plant.soil_humidity === 'number' && (
                 <div>
                   <h3 className="font-semibold text-gray-700 mb-1">
-                    🌍 Origin
+                    💧 Soil Moisture
                   </h3>
-                  <p className="text-gray-600">{plant.origin}</p>
+                  <p className="text-gray-600">
+                    {getHumidityLabel(plant.soil_humidity)}
+                  </p>
                 </div>
               )}
+
+              {/* Atmospheric Humidity */}
+              {typeof plant.atmospheric_humidity === 'number' && (
+                <div>
+                  <h3 className="font-semibold text-gray-700 mb-1">
+                    💨 Air Humidity
+                  </h3>
+                  <p className="text-gray-600">
+                    {getHumidityLabel(plant.atmospheric_humidity)}
+                  </p>
+                </div>
+              )}
+
+              {/* Temperature */}
+              {typeof plant.temperature_min === 'number' &&
+                typeof plant.temperature_max === 'number' && (
+                  <div>
+                    <h3 className="font-semibold text-gray-700 mb-1">
+                      🌡️ Temperature
+                    </h3>
+                    <p className="text-gray-600">
+                      {plant.temperature_min}°C - {plant.temperature_max}°C
+                    </p>
+                  </div>
+                )}
             </div>
 
             <button

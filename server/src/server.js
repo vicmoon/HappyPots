@@ -18,6 +18,10 @@ const startServer = async () => {
       console.log('✓ Database models synchronized');
     }
 
+    sequelize.sync({ alter: true }).then(() => {
+      console.log('✅ Database synced with new columns');
+    });
+
     // Start server
     const PORT = config.port;
     app.listen(PORT, () => {
