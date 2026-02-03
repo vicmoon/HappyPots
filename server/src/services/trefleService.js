@@ -13,7 +13,7 @@ class TrefleService {
         params: {
           token: this.apiKey,
           q: query,
-          page,
+          page: page,
         },
       });
 
