@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PlantSearch from './PlantSearch';
 import PlantCard from './PlantCard';
 import api from '../services/api';
@@ -8,6 +8,22 @@ const PlantLibrary = () => {
   const [plants, setPlants] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [lastQuery, setLastQuery] = useState('');
+
+  // 💾 1. Load saved search results when the component mounts
+  useEffect(() => {
+    const savedPlants = sessionStorage.getItem('lastPlantResults');
+    const savedQuery = sessionStorage.getItem('lastPlantQuery');
+
+    if (savedPlants && savedQuery) {
+      try {
+        setPlants(JSON.parse(savedPlants));
+        setLastQuery(savedQuery);
+      } catch (e) {
+        console.error('Failed to parse saved plants', e);
+      }
+    }
+  }, []);
 
   const handleSearch = async (query) => {
     setIsLoading(true);
@@ -18,75 +34,41 @@ const PlantLibrary = () => {
         `/plants/search?q=${encodeURIComponent(query)}`
       );
 
-      const rawData = response.data.data;
+      // Extract the data array from the response
+      const rawData = response.data.success
+        ? response.data.data
+        : response.data;
 
       if (!Array.isArray(rawData)) {
-        console.error('❌ API did not return an array:', rawData);
         setPlants([]);
         setIsLoading(false);
         return;
       }
 
-      // ⭐ Extract ONLY primitive values
-      const plantList = rawData
-        .filter((plant) => plant && plant.common_name && plant.id)
-        .map((plant) => {
-          // Extract family name safely
-          let familyName = null;
-          if (typeof plant.family === 'string') {
-            familyName = plant.family;
-          } else if (
-            plant.family &&
-            typeof plant.family === 'object' &&
-            plant.family.name
-          ) {
-            familyName = plant.family.name;
-          }
+      // Normalize the data to ensure only primitives are passed to PlantCard
+      const normalized = rawData.map((plant) => ({
+        id: plant.id,
+        common_name: plant.common_name || 'Unknown Plant',
+        scientific_name: plant.scientific_name,
+        image_url: plant.image_url,
+        family:
+          typeof plant.family === 'object' ? plant.family?.name : plant.family,
+        genus:
+          typeof plant.genus === 'object' ? plant.genus?.name : plant.genus,
+        // Flatten growth attributes to primitives
+        light: plant.growth?.light,
+        atmospheric_humidity: plant.growth?.atmospheric_humidity,
+      }));
 
-          // Extract genus safely
-          let genusName = null;
-          if (typeof plant.genus === 'string') {
-            genusName = plant.genus;
-          } else if (
-            plant.genus &&
-            typeof plant.genus === 'object' &&
-            plant.genus.name
-          ) {
-            genusName = plant.genus.name;
-          }
+      setPlants(normalized);
+      setLastQuery(query);
 
-          return {
-            id: plant.id,
-            common_name: plant.common_name,
-            scientific_name:
-              typeof plant.scientific_name === 'string'
-                ? plant.scientific_name
-                : null,
-            image_url:
-              typeof plant.image_url === 'string' ? plant.image_url : null,
-            family: familyName,
-            genus: genusName,
-            light:
-              typeof plant.growth?.light === 'number'
-                ? plant.growth.light
-                : null,
-            soil_humidity:
-              typeof plant.growth?.soil_humidity === 'number'
-                ? plant.growth.soil_humidity
-                : null,
-            atmospheric_humidity:
-              typeof plant.growth?.atmospheric_humidity === 'number'
-                ? plant.growth.atmospheric_humidity
-                : null,
-          };
-        });
-
-      console.log('✅ Normalized plants:', plantList);
-
-      setPlants(plantList);
+      // Change localStorage to sessionStorage
+      sessionStorage.setItem('lastPlantResults', JSON.stringify(normalized));
+      sessionStorage.setItem('lastPlantQuery', query);
     } catch (err) {
       setError('Failed to search plants. Please try again.');
-      console.error('❌ Search error:', err);
+      console.error('Search error:', err);
     } finally {
       setIsLoading(false);
     }
@@ -101,34 +83,22 @@ const PlantLibrary = () => {
       {error && <div className="error-message">{error}</div>}
 
       {plants.length > 0 ? (
-        <div className="plants-grid">
-          {plants.map((plant, index) => {
-            // ⭐ Extra safety check
-            if (!plant || typeof plant !== 'object') {
-              console.error('❌ Invalid plant at index', index, plant);
-              return null;
-            }
-
-            // ⭐ Check for raw Trefle objects
-            const keys = Object.keys(plant);
-            if (keys.includes('slug') || keys.includes('links')) {
-              console.error('❌ Skipping raw Trefle object:', plant);
-              return null;
-            }
-
-            return <PlantCard key={plant.id || index} plant={plant} />;
-          })}
-        </div>
+        <>
+          <p className="results-count">
+            Showing results for "{lastQuery}" ({plants.length} plants)
+          </p>
+          <div className="plants-grid">
+            {plants.map((plant) => (
+              <PlantCard key={plant.id} plant={plant} />
+            ))}
+          </div>
+        </>
       ) : (
         <div className="empty-state">
           {isLoading ? (
             <p>Searching plants...</p>
           ) : (
-            <div>
-              <p className="empty-state-title">
-                Search for plants to get started!
-              </p>
-            </div>
+            <p>Search for plants to get started!</p>
           )}
         </div>
       )}
