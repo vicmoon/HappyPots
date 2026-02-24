@@ -1,24 +1,31 @@
+// src/components/Navbar.jsx
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/useAuth';
 import '../../styles/Navbar.css';
 
 const Navbar = () => {
+  const { user, logout } = useAuth();
+
   return (
     <nav className="navbar">
-      <div className="navbar-container">
-        <Link to="/" className="navbar-logo">
-          🪴 Happy Pot
-        </Link>
-        <div className="navbar-links">
-          <Link to="/library" className="nav-link">
-            Browse Plants
-          </Link>
-          <Link to="/login" className="nav-link">
-            Login
-          </Link>
-          <Link to="/register" className="nav-link">
-            Sign Up
-          </Link>
-        </div>
+      <Link to="/" className="logo">
+        Happy Pot
+      </Link>
+      <div className="nav-links">
+        <Link to="/library">Browse Plants</Link>
+        {user ? (
+          <>
+            <Link to="/my-garden">My Garden</Link>
+            <button onClick={logout} className="logout-btn">
+              Logout
+            </button>
+          </>
+        ) : (
+          <>
+            <Link to="/login">Login</Link>
+            <Link to="/register">Sign Up</Link>
+          </>
+        )}
       </div>
     </nav>
   );
